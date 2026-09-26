@@ -131,12 +131,37 @@
     return palette;
   }
 
-  /* 纯文字，不加任何底片 / 边框 / 圆角 */
-  function applyBadgeStyle(el) {
+  /*
+   * B 站等级图标是 30×30 的 SVG，但红色胶囊只画在 x ∈ [1, 20.4] 这一段，
+   * 右侧大约 9.6px 是透明的。徽章紧跟在 #user-level 后面时，这 9.6px
+   * 会被算进视觉左间距，导致左边明显比右边宽 —— 必须用负 margin 扣掉。
+   */
+  function levelDeadSpace(levelEl) {
+    if (!levelEl) return 0;
+    var img = levelEl.querySelector('img');
+    if (!img) return 0;
+    if (!/\/level_\d+\.svg/.test(img.getAttribute('src') || '')) return 0;
+    var w = img.getBoundingClientRect().width;
+    return w ? w * (1 - 20.4 / 30) : 0;
+  }
+
+  /*
+   * 纯文字，不加任何底片 / 边框 / 圆角。
+   *
+   * 右侧间距是固定的：楼中楼子回复里，正文 <bili-rich-text> 与用户信息块之间
+   * 是 B 站自带的一个空格（实测 3.6px），而我们的徽章是 #info
+   * （inline-flex，gap 为 normal 即 0）的最后一个子元素，右侧间距完全由它决定。
+   * 所以左 margin 的目标就是让「可见间距」也等于这个值：
+   *     margin-left = 目标间距 - 等级图标的透明留白
+   */
+  var RIGHT_GAP = 3.6;
+
+  function applyBadgeStyle(el, levelEl) {
     var p = getPalette();
+    var marginLeft = Math.round((RIGHT_GAP - levelDeadSpace(levelEl)) * 10) / 10;
     el.style.cssText = [
       'display: inline-block',
-      'margin: 0 0 0 6px',
+      'margin: 0 0 0 ' + marginLeft + 'px',
       'padding: 0',
       'border: 0',
       'background: none',
@@ -160,12 +185,12 @@
     return /^IP属地/.test(s) ? s : 'IP属地：' + s;
   }
 
-  function makeBadge(text) {
+  function makeBadge(text, levelEl) {
     var badge = document.createElement('span');
     badge.className = BADGE_CLASS;
     badge.textContent = text;
     badge.title = text;
-    applyBadgeStyle(badge);
+    applyBadgeStyle(badge, levelEl);
     return badge;
   }
 
@@ -198,7 +223,8 @@
     if (!mid) return;
 
     // 优先挂在等级徽章右边；没有等级元素时退回用户名右边
-    var anchor = sr.querySelector('#user-level') || nameEl;
+    var levelEl = sr.querySelector('#user-level');
+    var anchor = levelEl || nameEl;
     var parent = anchor.parentNode;
     if (!parent) return;
 
@@ -224,7 +250,7 @@
       return;
     }
 
-    var badge = makeBadge(loc);
+    var badge = makeBadge(loc, levelEl);
     if (anchor.nextSibling) parent.insertBefore(badge, anchor.nextSibling);
     else parent.appendChild(badge);
   }
@@ -243,11 +269,12 @@
       if (!mid) continue;
 
       // 尽量挂到等级徽章右边：往上层找 1~3 层，看有没有等级元素
+      var levelEl = null;
       var anchor = a;
       var scope = a.parentNode;
       for (var d = 0; d < 3 && scope && scope !== item.parentNode; d++) {
-        var levelEl = scope.querySelector('[class*="level"], .level');
-        if (levelEl) { anchor = levelEl; break; }
+        var found = scope.querySelector('[class*="level"], .level');
+        if (found) { levelEl = found; anchor = found; break; }
         scope = scope.parentNode;
       }
 
@@ -279,7 +306,7 @@
         continue;
       }
 
-      var badge = makeBadge(loc);
+      var badge = makeBadge(loc, levelEl);
       if (anchor.nextSibling) holder.insertBefore(badge, anchor.nextSibling);
       else holder.appendChild(badge);
     }
