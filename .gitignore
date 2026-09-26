@@ -1,0 +1,19 @@
+# 操作系统产生的垃圾文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 编辑器 / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 打包扩展时生成的私钥与产物
+# ⚠️ .pem 是决定扩展 ID 的私钥，一旦泄露别人就能冒用你的扩展身份，绝对不要提交
+*.pem
+*.crx
+*.zip
+
+# 本机调试用的临时浏览器配置
+.probe/

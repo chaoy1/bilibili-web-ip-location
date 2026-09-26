@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "B站评论 IP 属地",
+  "version": "1.0.0",
+  "description": "在哔哩哔哩网页版评论区显示每位用户的 IP 属地，与手机 App 保持一致。",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.bilibili.com/*", "*://bilibili.com/*"],
+      "js": ["src/content.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/hook.js"],
+      "matches": ["*://*.bilibili.com/*", "*://bilibili.com/*"]
+    }
+  ]
+}
